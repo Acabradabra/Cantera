@@ -1,6 +1,9 @@
 description: |-
-  CH4_BFER mechanisme: CH4 + 1.5 O2  => CO +2H2O
-                        CO + 0.5 O2 <=> CO2
+  Fluent mechanisme: CH4 + 1.5 O2  =>  CO + 2H2O
+                      CO + 0.5 O2 <=>  CO2
+                    C2H6 + 3.5 O2 <=> 2CO + 3H2O
+                    C3H8 + 5   O2 <=> 3CO + 4H2O
+                      # H2 + 0.5 O2 <=> H2O
 
   Transport data from file ../transport/gri30_tran.dat.
 
@@ -12,15 +15,6 @@ input-files: [2S_CH4_BFER.cti]
 units: {length: cm, quantity: mol, activation-energy: cal/mol}
 
 phases:
-  #- name: CH4_BFER
-  #  thermo: ideal-gas
-  #  elements: [O, H, C, N]
-  #  species: [O2, H2O, CH4, CO, CO2, N2]
-  #  kinetics: gas
-  #  reactions: all
-  #  state:
-  #    T: 300.0
-  #    P: 1.01325e+05
 - name: CH4_BFER_mix
   thermo: ideal-gas
   elements: [O, H, C, N]
@@ -31,16 +25,6 @@ phases:
   state:
     T: 300.0
     P: 1.01325e+05
-      #- name: CH4_BFER_multi
-      #  thermo: ideal-gas
-      #  elements: [O, H, C, N]
-      #  species: [O2, H2O, CH4, CO, CO2, N2]
-      #  kinetics: gas
-      #  reactions: all
-      #  transport: multicomponent
-      #  state:
-      #    T: 300.0
-      #    P: 1.01325e+05
 
 species:
 - name: H2
@@ -944,8 +928,18 @@ species:
   note: L 8/88
 
 reactions:
-- equation: ' CH4 + 1.5 O2 =>  CO + 2 H2O '  # Reaction 1
-  rate-constant: {A: 4.9e+09, b: 0.0, Ea: 35500}
-  orders: {CH4: 0.5, O2: 0.65}
-- equation: ' CO + 0.5 O2 <=> CO2'  # Reaction 2
-  rate-constant: {A: 2.0e+08, b: 0.7, Ea: 12000}
+- equation: ' CH4 + 1.5 O2 =>  CO + 2 H2O '     # Reaction 1
+  rate-constant: {A: 6.7e12, b: 0.0, Ea: 48.4e3}
+  orders: {CH4: 0.2, O2: 1.3}
+- equation: ' CO + 0.5 O2 <=> CO2 '             # Reaction 2
+  rate-constant: {A: 4.0e14, b: 0, Ea: 4.0e4 }
+  orders: {CO: 1, O2: 0.25, H2O: 0.5}
+- equation: ' C2H6 + 2.5 O2 <=> 2 CO2 + 3 H2O ' # Reaction 3
+  rate-constant: {A: 1.3e12, b: 0, Ea: 3.0e4 }
+  orders: {C2H6: 0.1, O2: 1.65}
+- equation: ' C3H8 + 10  O2 <=> 3 CO2 + 4 H2O ' # Reaction 4
+  rate-constant: {A: 1.0e12, b: 0, Ea: 3.0e4 }
+  orders: {C3H8: 0.1, O2: 1.65}
+- equation: '   H2 + 0.5 O2 <=> H2O '           # Reaction 5
+  rate-constant: {A: 1.0e12, b: 0, Ea: 3.0e4 }
+  orders: {C3H8: 0.1, O2: 1.65}

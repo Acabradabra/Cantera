@@ -60,8 +60,9 @@ Pi=ct.one_atm
 hyb=man.Alpha(hyb0) # Conversion power volumic flow
 
 ########## --------------------> Reactants
-if hyb==1 : Fuel='H2'
-else      : Fuel='CH4'
+if   hyb0==1 : Fuel='H2'
+elif hyb0==2 : Fuel='GN'
+else         : Fuel='CH4'
 
 X0=0.21 #{float(sys.argv[2]) # 0.057, 0.125, 0.210 ( air ), 0.400, 1.0 ( O2 )
 a=(1-X0)/X0
@@ -69,7 +70,6 @@ a=(1-X0)/X0
 gas=0
 if Fuel=='H2' :
 	SpeIn=['H2','O2','N2']
-	# SpeOu=['All']
 	SpeOu=['H2','O2','N2','H2O']
 	if NOX :
 		schem='UCSD_SanDiego2_All2'
@@ -77,24 +77,21 @@ if Fuel=='H2' :
 		# (gas,Spe_name,Nspe,NOx_name,INOx,NNOx,Reac,Nreac)=f1D.ExtractSubmech(schem,0)
 	else : 
 		# schem='Boivin'
-		# gas=ct.Solution( schem + '.yaml' )
 		schem='UCSD_SanDiego0'
 	if 'UCSD' in schem : (gas,Spe_name,Nspe,NOx_name,INOx,NNOx,Reac,Nreac)=f1D.ExtractSubmech(schem,0)
-elif Fuel=='CH4' :
-	# schem='gri30'
-	# schem='gri30_highT'
-	# schem='UCSD-01'
+elif Fuel=='CH4' or Fuel=='GN' :
 	schem='UCSD_SanDiego0'
-	# schem='2S_CH4_BFER'
-	if schem=='2S_CH4_BFER' :
-		SpeIn=['CH4','CO2','CO','O2','H2O','N2']
-		SpeOu=['CH4','CO2','CO','O2','H2O','N2']
-	elif schem=='UCSD_SanDiego0' :
-		SpeIn=['CH4','O2','N2']
-		# SpeOu=['H2','H','O','O2','OH','H2O','HO2','CH3','CH4','CO','CO2','CH2O','N2']
-		SpeOu=['CH4','CO2','CO','O2','H2O','N2']
+	SpeIn=['CH4','CO2','CO','O2','H2O','N2']
+	SpeOu=['CH4','CO2','CO','O2','H2O','N2']
+elif Fuel=='GN' :
+	schem='UCSD_SanDiego0'
+	SpeIn=['CH4','C2H6','C3H8','CO2','CO','O2','H2O','N2']
+	SpeOu=['CH4','C2H6','C3H8','CO2','CO','O2','H2O','N2']
 else :
 	sys.exit('\n====> Fuel not build yet \n\n')
+
+CompoGN={ 'CH4':0.925,'C2H6':0.041,'C3H8':0.009,'CO2':0.010,'N2':0.015 }
+Xia=2*CompoGN['CH4']+2.5*CompoGN['C2H6']+10*CompoGN['C3H8']
 
 if gas==0 : gas=ct.Solution( schem + '.yaml' )
 ########## --------------------> initial grid
@@ -108,7 +105,7 @@ Set_sut0=[0.18662466e-4,300,0.6759]
 ########## --------------------> Calculation setting
 Tol=[1e-3,1e-8]
 #Tol=[1e-6,1e-10]
-# Tol=[1e-8,1e-10]
+#Tol=[1e-8,1e-10]
 #Tol=[1e-10,1e-12]
 
 if Raf=='G' :
@@ -122,34 +119,26 @@ elif Raf=='F' :
 	Ncase=0
 else : sys.extit('\n\n =====> Wrong Refinement \n\n')
 
-#Tstep=1e-9
 view=0
 
 ########## --------------------> Rayonnement
 Ray=False
 
 ########## --------------------> Gas
-# gas=ct.Solution( schem + '.yaml' )
 Spe=gas.species_names ; Nspe=len(Spe)
 if NOX : (NOx_name,NNOx,INOx)=f1D.LocateNOx(Spe,Nspe)
 ISou=[ Spe.index(s) for s in SpeOu ]
 
 Set1='{2}_Pi={0:1.3e}_{1}_X0{3:.2f}_hyb{4:.3f}'.format(Pi,schem,Fuel,X0,hyb0)
 Set2='Raf{0:.0f}_Tol={1:.0e}_Tstep={2:.0e}_L{3:1.2e}'.format(Rafcrit,Tol[0]*Tol[1],Tstep,L)
-# Set0= Set1 + '_' + Set2
 Set0='{}_hyb{:02.0f}_{}_{}_L{:03.0f}'.format(Fuel,hyb0*100,schem,Rafcrit,L*1e3)
-
-# NOx_data='Data-Adia/NOx-hyb{0:03.0f}-{1:02.0f}.in'.format(hyb0*100,Ncase) 
-# STe_data='Data-Adia/STe-hyb{0:03.0f}-{1:02.0f}.in'.format(hyb0*100,Ncase) 
 
 if DIFF : sdif='-Diff-'
 else    : sdif='-'
-NOx_data='Data-Adia/NOx{3}hyb{0:03.0f}-{1}-{2:02.0f}.dat'.format(hyb0*100,Set0,Ncase,sdif)
-STe_data='Data-Adia/STe{3}hyb{0:03.0f}-{1}-{2:02.0f}.dat'.format(hyb0*100,Set0,Ncase,sdif)
+NOx_data='Data-Adia/NOx{}{}-{:.0f}.dat'.format(sdif,Set0,Ncase)
+STe_data='Data-Adia/STe{}{}-{:.0f}.dat'.format(sdif,Set0,Ncase)
 # Dif_data='Data-Adia/Dif-hyb{0:03.0f}-{1}-{2:02.0f}.dat'.format(hyb0*100,Set0,Ncase)
 
-#NameIn='Flame/Adia-{0}-{1}-{2}-{3:02.0f}.xml'.format(Set0,Fuel,schem,Ncase)
-# NameIn='Flame/Adia-{0}-{1:02.0f}'.format('F',Ncase)
 NameIn='Flame/Flame-{}.yaml'.format(Set0)
 NameOut=NameIn
 
@@ -192,8 +181,10 @@ for phi in Vphi :
 			Xi={'CH4':1,'O2': 2/phi ,'N2': 2*a/phi}
 		elif Fuel=='CH4' :
 			oxy=(2-3*hyb/2)
-			#Xi={'CH4':phi*(1-hyb),'H2':phi*hyb,'O2': oxy ,'N2': 2*a*oxy}
-			Xi={'CH4':phi*(1-hyb),'H2':phi*hyb,'O2': oxy ,'N2': a*oxy}
+			# Xi={'CH4':phi*(1-hyb),'H2':phi*hyb,'O2': oxy ,'N2': 2*a*oxy}
+			Xi={ 'CH4':phi*(1-hyb) , 'H2':phi*hyb , 'O2':oxy , 'N2': a*oxy }
+		elif Fuel=='GN' :
+			Xi={ 'CH4':CompoGN['CH4'],'C2H6':CompoGN['C2H6'],'C3H8':CompoGN['C3H8'],'O2':Xia/phi,'N2':a*Xia/phi }
 		###########################################################################################################################
 		###########################################################################################################################			
 		util.Section('Start adia => Ti : {0:.0f} , phi : {1:.3f}'.format(Ti,phi),0,3,'b')
@@ -256,11 +247,11 @@ for phi in Vphi :
 		######################################## --------------------> Profile
 		if PROF :
 			fout=open('Profile/F_phi{:03.0f}_Ti{:.0f}_'.format(phi*100,Ti)+Set0+'.dat','w')
-			fout.write('Pos,T,')
+			fout.write('Pos,T,U,')
 			for s in SpeOu : fout.write(s+',')
 			fout.write('Q\n')
 			for i in range(Ngrid) :
-				fout.write( '{:.12e},{:.12e},'.format(grid[i],T[i],) )
+				fout.write( '{:.12e},{:.12e},'.format(grid[i],T[i],U[i]) )
 				for k in ISou :fout.write('{:.12e},'.format(Y[k,i]))
 				fout.write( '{:.12e}\n'.format(Qx[i]) )
 			fout.closed
