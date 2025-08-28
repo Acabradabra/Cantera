@@ -1,0 +1,88 @@
+# Natural gas composition from analysis:
+# CH4:     0.92398
+# C2H6:    0.04139
+# C3H8:    0.00640
+# I-C4H10: 0.00257
+# N-C4H10: 0.00113
+# I-C5H12: 0.00056
+# N-C5H12: 0.00029
+# C6+:     0.00091
+# CO2:     0.00957
+# N2:      0.01320
+
+burner:
+  combustion:
+      mechanism: "gri30.yaml"
+
+      controls:
+          power: 800.0
+          loading: 0.0001
+          equivalence: 1.0
+
+      mixtures:
+          oxidizer:
+              T: 300.0
+              X:
+                  O2: 1.0
+
+          hydrogen:
+              T: 300.0
+              X:
+                  H2: 1.0
+
+          natural_gas:
+              T: 300.0
+              X:
+                  CH4:  0.925
+                  C2H6: 0.041
+                  C3H8: 0.009
+                  CO2:  0.010
+                  N2:   0.015
+
+  geometry:
+      diam_int_staged:       0.01000
+      diam_int_oxidizer:     0.04500
+      diam_ext_fuel_inner:   0.01270
+      diam_ext_fuel_outer:   0.02690
+      wall_thick_fuel_inner: 0.00124
+      wall_thick_fuel_outer: 0.00160
+
+  controls:
+      power_fraction_top: 0.0
+      staged_oxidizer_fraction: 0.62
+      axial_fuel_fraction: 0.60
+
+solids:
+  feed:
+    mass_flow_rate: 13187
+    y_alooh: 0.3400
+    y_caco3: 0.5200
+    y_humid: 0.0075
+
+  hypotheses:
+    bath_temperature: 1723.0
+    power: 
+      - -145.5474
+      - -73.60779
+      - -74.23962
+      - -73.38228
+      - -44.28528
+
+other:
+  temperature:
+    water: 300.0
+    external: 300.0
+  
+  porthole:
+    diam_oxid: 0.00700
+    flow_rate: 5.0
+
+  emissivity:
+    refractory: 0.85
+    shell: 0.8
+
+  htc:
+    shell: 15.0
+    box: 1000.0
+
+  thick_box_layer: 0.01

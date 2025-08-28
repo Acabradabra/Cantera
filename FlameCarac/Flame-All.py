@@ -45,7 +45,8 @@ VTi =[300]                #float(Sysa[0])
 # Vphi=arange(1,0,-0.01)
 # Vphi=arange(1,0.199,-0.01)
 # Vphi=arange(1,8.001, 0.01)
-Vphi=arange(1.0,0.0,-0.01)
+# Vphi=arange(1.0,0.0,-0.01)
+Vphi=arange(1.0,0.5,-0.01)
 # Vphi=[ 0.42 ]
 # Vphi=[ 0.45 ]
 #Vphi=[ 0.49 ]
@@ -69,7 +70,7 @@ a=(1-X0)/X0
 
 gas=0
 if Fuel=='H2' :
-	SpeIn=['H2','O2','N2']
+	SpeIn=['H2']
 	SpeOu=['H2','O2','N2','H2O']
 	if NOX :
 		schem='UCSD_SanDiego2_All2'
@@ -78,14 +79,20 @@ if Fuel=='H2' :
 	else : 
 		# schem='Boivin'
 		schem='UCSD_SanDiego0'
+		# schem='Fluent'
 	if 'UCSD' in schem : (gas,Spe_name,Nspe,NOx_name,INOx,NNOx,Reac,Nreac)=f1D.ExtractSubmech(schem,0)
-elif Fuel=='CH4' or Fuel=='GN' :
-	schem='UCSD_SanDiego0'
-	SpeIn=['CH4','CO2','CO','O2','H2O','N2']
+elif Fuel=='CH4' :
+	# schem='gri30'
+	schem='Laera'
+	# schem='2S_CH4_BFER'
+	# schem='UCSD_SanDiego0'
+	# schem='Fluent'
+	SpeIn=['CH4']
 	SpeOu=['CH4','CO2','CO','O2','H2O','N2']
 elif Fuel=='GN' :
-	schem='UCSD_SanDiego0'
-	SpeIn=['CH4','C2H6','C3H8','CO2','CO','O2','H2O','N2']
+	# schem='UCSD_SanDiego0'
+	schem='Fluent'
+	SpeIn=['CH4','C2H6','C3H8','H2']
 	SpeOu=['CH4','C2H6','C3H8','CO2','CO','O2','H2O','N2']
 else :
 	sys.exit('\n====> Fuel not build yet \n\n')
@@ -95,7 +102,8 @@ Xia=2*CompoGN['CH4']+2.5*CompoGN['C2H6']+10*CompoGN['C3H8']
 
 if gas==0 : gas=ct.Solution( schem + '.yaml' )
 ########## --------------------> initial grid
-L=40e-3
+# L=40e-3
+L=20e-3
 dx=1e-4 ; N0=int(round(L/dx,0))+1
 grid0=linspace(0,L,N0)
 
@@ -127,11 +135,12 @@ Ray=False
 ########## --------------------> Gas
 Spe=gas.species_names ; Nspe=len(Spe)
 if NOX : (NOx_name,NNOx,INOx)=f1D.LocateNOx(Spe,Nspe)
+ISin=[ Spe.index(s) for s in SpeIn ]
 ISou=[ Spe.index(s) for s in SpeOu ]
 
 Set1='{2}_Pi={0:1.3e}_{1}_X0{3:.2f}_hyb{4:.3f}'.format(Pi,schem,Fuel,X0,hyb0)
 Set2='Raf{0:.0f}_Tol={1:.0e}_Tstep={2:.0e}_L{3:1.2e}'.format(Rafcrit,Tol[0]*Tol[1],Tstep,L)
-Set0='{}_hyb{:02.0f}_{}_{}_L{:03.0f}'.format(Fuel,hyb0*100,schem,Rafcrit,L*1e3)
+Set0='{}_hyb{:02.0f}_{}_{}_L{:03.0f}'.format(Fuel,hyb0*100,schem,Raf,L*1e3)
 
 if DIFF : sdif='-Diff-'
 else    : sdif='-'
@@ -223,7 +232,8 @@ for phi in Vphi :
 		rho0 =rho[0]
 		Ta   =T[-1]
 		Thick=f1D.Thick(grid,T,Ngrid)
-		
+		Y0f  =sum([Y[k,0] for k in ISin])
+
 		Q=sum( [ 0.5*( Qx[n+1]+Qx[n] )*( grid[n+1]-grid[n] ) for n in range(Ngrid-1) ] ) ; MH=max(Qx)
 
 		#=========================> Plot
@@ -265,7 +275,7 @@ for phi in Vphi :
 			os.system('echo {0} >> {1}'.format(NOx_OUT,NOx_data))
 		######################################## --------------------> Sl Tad Thickness
 		if DATA :
-			STe='{0:.12f},{1:.12f},{2:.12f},{3:.12f},{4:.12e},{5:.12e},{6:.12e},{7:.12e},{8:.12e},{9:.12e},{10:.12e}'.format(hyb,phi,Ti,Ta,Sl,Thick,rho0,Q,MH,lamb[0],Cp[0])
+			STe='{0:.12f},{1:.12f},{2:.12f},{3:.12f},{4:.12e},{5:.12e},{6:.12e},{7:.12e},{8:.12e},{9:.12e},{10:.12e},{11:.12e}'.format(hyb,phi,Ti,Ta,Sl,Thick,rho0,Q,MH,lamb[0],Cp[0],Y0f)
 			os.system('echo {0} >> {1}'.format(STe,STe_data))
 	if not conv_a : 
 		print('=> Stop')

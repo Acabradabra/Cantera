@@ -1,0 +1,39 @@
+$MIXTURE
+!---------------------------------------------------------------------------------------------------------------------
+! Analytical scheme of Lu. 13 species, 73 reactions, 4 qss.
+!---------------------------------------------------------------------------------------------------------------------
+  mixture_name = CH4_13_73_4_LU
+  validity_info = 300K/1bar
+  transport = computed
+  chemistry_subcycle_iterations = 15
+  combustion_chemistry = analytic
+  species_name = H2 H O O2 OH H2O HO2 CH3 CH4 CO CO2 CH2O N2
+! Take the Schmidt from 1D flame
+  species_Schmidt_number = 0.21d0 0.12d0 0.49d0 0.75d0 0.5d0 0.55d0 0.75d0 0.68d0 0.69d0 0.76d0 0.96d0 0.87d0 0.74d0
+  viscosity_law = power
+  mu_ref = 1.66598d-5
+  T_ref = 275.5d0
+  viscosity_law_coeff = 0.72124d0
+  prandtl_number = 0.70d0
+  fuel_tank_composition = 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 1.d0 0.d0 0.d0 0.d0 0.d0
+  oxydizer_tank_composition = 0.d0 0.d0 0.d0 0.233d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.767d0
+
+
+!--------------------------------------------------------------------------------------------------
+! Analytical Scheme CH4_NOX_22_320_18_TJ. 22 species, 320 reactions, 18 qss.
+!--------------------------------------------------------------------------------------------------
+  mixture_name = CH4_NOX_22_320_18_TJ
+  validity_info = 300K/1bar
+  transport = computed
+  combustion_chemistry = analytic
+  species_name = N2 H H2 O O2 OH H2O H2O2 HO2 CO CH2O CH3 CH3OH C2H2 CH4 C2H6 C2H4 CO2 NO HCN NO2 N2O
+  species_Schmidt_number = 0.7336d0 0.1246d0 0.2085d0 0.4853d0 0.7463d0 0.4945d0 0.5506d0 0.7561d0 0.7510d0 0.7569d0 0.8659d0 0.6812d0 0.8866d0 0.8927d0 0.6851d0 0.9900d0 0.9004d0 0.9559d0 0.7630d0 0.8636d0 0.8557d0 0.9423d0
+  viscosity_law = power
+  mu_ref = 1.8405d-5
+  T_ref = 300.d0
+  viscosity_law_coeff = 0.6759d0
+  prandtl_number = 0.7019d0
+  fuel_tank_composition = 0.0d0 0.d0 0.d0 0.d0 0.0d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 1.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0
+  oxydizer_tank_composition = 0.767d0 0.d0 0.d0 0.d0 0.233d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0 0.d0
+
+$end_MIXTURE

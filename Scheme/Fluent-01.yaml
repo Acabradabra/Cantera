@@ -10,7 +10,7 @@ cantera-version: 3.1.0
 date: Wed, 20 Aug 2025 13:33:39 +0200
 input-files: [2S_CH4_BFER.cti]
 
-units: {length: cm, quantity: mol, activation-energy: cal/mol}
+units: {length: cm, quantity: mol, activation-energy: J/kmol}
 
 phases:
 - name: Fluent
@@ -187,14 +187,19 @@ species:
   note: L 4/85
 
 reactions:
-- equation: ' CH4 + 1.5 O2 =>  CO + 2 H2O '  # Reaction 1
-  rate-constant: {A: 4.9e+09, b: 0.0, Ea: 35500}
-  orders: {CH4: 0.5, O2: 0.65}
-- equation: ' CO + 0.5 O2 <=> CO2'  # Reaction 2
-  rate-constant: {A: 2.0e+08, b: 0.7, Ea: 12000}
+- equation: ' CH4 + 1.5 O2 =>  CO + 2 H2O '     # Reaction 1
+  rate-constant: {A: 5.012e+11, b: 0, Ea: 2.0e8}
+  orders: {CH4: 0.7, O2: 0.8}
 - equation: ' C2H6 + 3.5 O2 => 2 CO2 + 3 H2O ' # Reaction 3
   rate-constant: {A: 6.186e+09, b: 0, Ea: 1.256e+08 }
   orders: {C2H6: 0.1, O2: 1.65}
 - equation: ' C3H8 + 5 O2 => 3 CO2 + 4 H2O '   # Reaction 4
   rate-constant: {A: 4.836e+09, b: 0, Ea: 1.256e+08 }
   orders: {C3H8: 0.1, O2: 1.65}
+- equation: '   H2 + 0.5 O2 => H2O '           # Reaction 5
+  rate-constant: {A: 9.870e+08, b: 0, Ea: 3.100e+07 }
+  orders: {H2: 1, O2: 1}
+- equation: ' CO + 0.5 O2 (+ M) => CO2 (+ M) '       # Reaction 2
+  type : three-body
+  rate-constant: {A: 2.239e+12, b: 0, Ea: 1.700e+08 }
+  efficiencies: {CO: 1, O2: 0.25, H2O: 0.5}
