@@ -46,7 +46,7 @@ VTi =[300]                #float(Sysa[0])
 # Vphi=arange(1,0.199,-0.01)
 # Vphi=arange(1,8.001, 0.01)
 # Vphi=arange(1.0,0.0,-0.01)
-Vphi=arange(1.0,0.5,-0.01)
+Vphi=arange(1.0,0.49,-0.01)
 # Vphi=[ 0.42 ]
 # Vphi=[ 0.45 ]
 #Vphi=[ 0.49 ]
@@ -83,7 +83,8 @@ if Fuel=='H2' :
 	if 'UCSD' in schem : (gas,Spe_name,Nspe,NOx_name,INOx,NNOx,Reac,Nreac)=f1D.ExtractSubmech(schem,0)
 elif Fuel=='CH4' :
 	# schem='gri30'
-	schem='Laera'
+	schem='Laera-light'
+	# schem='Laera'
 	# schem='2S_CH4_BFER'
 	# schem='UCSD_SanDiego0'
 	# schem='Fluent'

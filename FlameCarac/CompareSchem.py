@@ -25,13 +25,19 @@ F_data=[
 # 'STe-CH4_hyb00_UCSD_SanDiego0_2_L040-0.dat',
 # 'STe-GN_hyb200_UCSD_SanDiego0_2_L040-0.dat'
 # 'STe-CH4_hyb00_2S_CH4_BFER_2_L040-0.dat'
-'STe-CH4_hyb00_Laera_G_L040-0.dat'
+# 'STe-CH4_hyb00_Laera_F_L020-0.dat'
+'STe-CH4_hyb00_Laera-light_F_L020-0.dat'
+# 'STe-CH4_hyb00_2S_CH4_BFER_F_L020-0.dat'
 ]
 
 F_prof=[
 # 'F_phi050_Ti300_CH4_hyb00_UCSD_SanDiego0_2_L040.dat',
 # 'F_phi050_Ti300_CH4_hyb00_Laera_2_L040.dat'
 # 'F_phi100_Ti300_GN_hyb200_UCSD_SanDiego0_2_L040.dat'
+'F_phi100_Ti300_CH4_hyb00_gri30_F_L020.dat',
+# 'F_phi100_Ti300_CH4_hyb00_Laera_F_L020.dat'
+'F_phi100_Ti300_CH4_hyb00_Laera-light_F_L020.dat'
+# 'F_phi100_Ti300_CH4_hyb00_2S_CH4_BFER_F_L020.dat',
 ]
 
 DATA=[ np.loadtxt(dird+f,skiprows=1,delimiter=',') for f in F_data ]
@@ -44,24 +50,25 @@ PROF=[ np.loadtxt(dirp+f,skiprows=1,delimiter=',') for f in F_prof ]
 
 #=====> Profiles
 figP,axP=plt.subplots(figsize=(10,8)) ; bxP=axP.twinx()
-for p in PROF :
-	axP.plot(p[:,0]*1e3,p[:,1])
+Col=['g','r']
+for n,p in enumerate(PROF) :
+	axP.plot(p[:,0]*1e3,p[:,1],Col[n])
 	bxP.plot(p[:,0]*1e3,p[:,-1],'k')
-axP.set_xlim((10,20))
+axP.set_xlim((5,10))
 figP.savefig('Plot/Compare-Profiles.pdf')
 
 #=====> Compare
 figC,axC=plt.subplots(ncols=2,nrows=2,figsize=(14,10)) ; bxC=np.array([ [ a.twinx() for a in al ] for al in axC ])
-axC[0,0].set_ylabel('Tad',fontsize=30) ; VT=[]
-axC[0,1].set_ylabel('Sl' ,fontsize=30) ; VS=[]
-axC[1,0].set_ylabel('Dl' ,fontsize=30) ; VD=[]
-axC[1,1].set_ylabel('PCI',fontsize=30) ; VQ=[]
+axC[0,0].set_ylabel('Tad [K]',fontsize=30)     ; axC[0,0].set_title('Adiabatique temperature',fontsize=20) ; VT=[]
+axC[0,1].set_ylabel('Sl [m/s]' ,fontsize=30)   ; axC[0,1].set_title('Flame velocity'         ,fontsize=20) ; VS=[]
+axC[1,0].set_ylabel('Dl [mm]' ,fontsize=30)    ; axC[1,0].set_title('Flame thickness'        ,fontsize=20) ; VD=[]
+axC[1,1].set_ylabel('PCI [MJ/kg]',fontsize=30) ; axC[1,1].set_title('Thermal power'          ,fontsize=20) ; VQ=[]
 Col=['g','r']
 for n,d in enumerate(DATA) :
-	VT.append( d[:,3] )
-	VS.append( d[:,4] )
-	VD.append( d[:,5]*1e3 )
-	VQ.append( d[:,7]/(d[:,6]*d[:,4]*d[:,-1]) )
+	VT.append(      d[:,3] )
+	VS.append(      d[:,4] )
+	VD.append(  1e3*d[:,5] )
+	VQ.append( 1e-6*d[:,7]/(d[:,6]*d[:,4]*d[:,-1]) )
 	axC[0,0].plot( d[:,1],VT[-1],Col[n])
 	axC[0,1].plot( d[:,1],VS[-1],Col[n])
 	axC[1,0].plot( d[:,1],VD[-1],Col[n])
@@ -83,6 +90,7 @@ util.NewPos(bxC[1,0],1,1,-0.03,0)
 util.NewPos(bxC[1,1],1,1, 0.03,0)
 
 figC.savefig('Plot/Compare-Carac.pdf')
+figC.savefig('Plot/Compare-Carac.png')
 
 
 # plt.show()
