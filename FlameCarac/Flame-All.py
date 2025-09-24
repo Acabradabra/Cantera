@@ -29,12 +29,12 @@ t0=time.time()
 
 ########## --------------------> Initial Gas State
 Ti=300
-VM0 =[10]                   #float(Sysa[0])
+VM0 =[10]                 #float(Sysa[0])
 VTi =[300]                #float(Sysa[0])
 #VTi =[300,500,700]                #float(Sysa[0])
 #VTi =[400,600,800]                #float(Sysa[0])
 #VTi =[300,400,500,600,700,800]    #float(Sysa[0])
-# VTi =[290,300,310,320,330,340,350]     #float(Sysa[0])
+# VTi =[290,300,310,320,330,340,350] #float(Sysa[0])
 # VTi=linspace(290,310,21)
 # VTi=linspace(300,800,51)
 # VTi=arange(300,801,10)
@@ -46,7 +46,7 @@ VTi =[300]                #float(Sysa[0])
 # Vphi=arange(1,0.199,-0.01)
 # Vphi=arange(1,8.001, 0.01)
 # Vphi=arange(1.0,0.0,-0.01)
-Vphi=arange(1.0,0.49,-0.01)
+Vphi=arange(1.0,0.39,-0.01)
 # Vphi=[ 0.42 ]
 # Vphi=[ 0.45 ]
 #Vphi=[ 0.49 ]
@@ -77,14 +77,15 @@ if Fuel=='H2' :
 		# schem='UCSD_SanDiego0_All'
 		# (gas,Spe_name,Nspe,NOx_name,INOx,NNOx,Reac,Nreac)=f1D.ExtractSubmech(schem,0)
 	else : 
-		# schem='Boivin'
+		# schem='gri30'
 		schem='UCSD_SanDiego0'
+		# schem='Laera-light'
+		# schem='Boivin'
 		# schem='Fluent'
 	if 'UCSD' in schem : (gas,Spe_name,Nspe,NOx_name,INOx,NNOx,Reac,Nreac)=f1D.ExtractSubmech(schem,0)
 elif Fuel=='CH4' :
 	# schem='gri30'
 	schem='Laera-light'
-	# schem='Laera'
 	# schem='2S_CH4_BFER'
 	# schem='UCSD_SanDiego0'
 	# schem='Fluent'
@@ -159,14 +160,18 @@ def Clear(name) : print('\n===> Clearing') ; os.system('rm '+name)
 #---------------------------------------------------------------------
 ######################################       Calculation             #
 #---------------------------------------------------------------------
-util.Entete1(105,[Set1,Set2,NameIn,'',NOx_data,STe_data],'Init AVBP')
+util.Entete1(104,[Set1,Set2,NameIn,'',NOx_data,STe_data],'Flame All')
 #---------------------------------------------------------------------
 # if CLEAR : Clear(NameIn)
 #---------------------------------------------------------------------
 util.Section('Start Loop Adia Calculations',2,5,'r')
 
 if DATA : 
-	if os.path.exists(STe_data) : os.system('rm {0} '.format(STe_data))
+	if os.path.exists(STe_data) : 
+		util.Section('Warning : Data file already exists',1,5,'y')
+		erase=input(' Do you want to erase it ? (y/n) ')
+		if 'y' in erase : os.system('rm {0} '.format(STe_data))
+		else 	        : sys.exit('\n\n====> Stop to avoid overwriting data \n\n')
 	# tit='hyb,phi,Tu,Ta,Sl,Thick,rhou,IHrr,MHrr'
 	tit='hyb,phi,Tu,Ta,Sl,Thick,rhou,IHrr,MHrr,la,cp'
 	os.system('echo {0} >> {1}'.format(tit,STe_data))
@@ -178,6 +183,7 @@ if NOX :
 if PLOT :
 	fig,ax=plt.subplots() ; ax2=ax.twinx()
 
+tn=time.time()
 for phi in Vphi :
 	for Ti in VTi :
 	# for m0 in VM0 :
@@ -197,7 +203,7 @@ for phi in Vphi :
 			Xi={ 'CH4':CompoGN['CH4'],'C2H6':CompoGN['C2H6'],'C3H8':CompoGN['C3H8'],'O2':Xia/phi,'N2':a*Xia/phi }
 		###########################################################################################################################
 		###########################################################################################################################			
-		util.Section('Start adia => Ti : {0:.0f} , phi : {1:.3f}'.format(Ti,phi),0,3,'b')
+		util.Section('Start adia => Ti : {:.0f} , phi : {:.3f} , Dt : {:.3f}'.format(Ti,phi,time.time()-tn),0,3,'b') ; tn=time.time()
 		if DIFF     : (f_a,conv_a)=f1D.ColdFlow(   Xi,       Ti,Pi,grid0,NameIn,NameOut,Tol,Tstep,Rafcrit,gas,Ray,view)
 		elif STRAIN : (f_a,conv_a)=f1D.CounterFlow(Xi,[m0,0],Ti,Pi,grid0,NameIn,NameOut,Tol,Tstep,Rafcrit,gas,Ray,view)
 		else        : (f_a,conv_a)=f1D.Adia1D_0(   Xi,       Ti,Pi,grid0,NameIn,NameOut,Tol,Tstep,Rafcrit,gas,Ray,view)
@@ -252,8 +258,8 @@ for phi in Vphi :
 		print('Sl         : {:.3f} [m/s]'.                              format(Sl) )
 		print('Tadia      : {:.0f} [K]  '.                              format(Ta) )
 		print('Thicknes   : {:.2f} [mm] '.                              format(Thick*1e3) )
-		print('rho in     : {:.3f} [kg/m3]  ,  rho ou : {:.3f} [kg/m3]'.format(rho[0],rho[-1]) )
-		print('Total Heat : {:.2e} [W]  ,  Max Heat : {:.2e} [W/m3]'.   format(Q,MH))
+		print('rho in     : {:.3f} [kg/m3]  ,  rho ou   : {:.3f} [kg/m3]'.format(rho[0],rho[-1]) )
+		print('Total Heat : {:.3f} [MW]     ,  Max Heat : {:.3f} [GW/m3]'.format(Q*1e-6,MH*1e-9) )
 		
 		######################################## --------------------> Profile
 		if PROF :
