@@ -12,7 +12,6 @@ import sys
 import os
 import time
 
-
 t0=time.time()
 
 #---------------------------------------------------------------------
@@ -21,17 +20,41 @@ t0=time.time()
 
 dird='Data-Adia/'
 dirp='Profile/'
-tag='H2-UCSD-Boivin-F-L020'
+# tag='H2-UCSD-Boivin-F-L020'
 # tag='H2-Gri30-Boivin-F-L020'
+tag='H2-Gri30-Laera-F-L020'
 # tag='CH4-Gri30-Laera-F-L020'
 # tag='CH4-Gri30-BFER-F-L020'
 # tag='CH4-50p-Gri30-Laera-F-L020'
 
-F_data=[
+if tag=='CH4-Gri30-BFER-F-L020' :
+	F_data=[
+	'STe-CH4_hyb00_gri30_F_L020-0.dat',
+	'STe-CH4_hyb00_2S_CH4_BFER_F_L020-0.dat']
+	F_prof=[
+	'F_phi100_Ti300_CH4_hyb00_gri30_F_L020.dat',
+	'F_phi100_Ti300_CH4_hyb00_2S_CH4_BFER_F_L020.dat']
+elif tag=='CH4-Gri30-Laera-F-L020' :
+	F_data=[
+	'STe-CH4_hyb50_gri30_F_L020-0.dat',
+	'STe-CH4_hyb50_Laera-light_F_L020-0.dat']
+	F_prof=[
+	'F_phi050_Ti300_CH4_hyb50_gri30_F_L020.dat',
+	'F_phi050_Ti300_CH4_hyb50_Laera-light_F_L020.dat']
+elif tag=='H2-Gri30-Laera-F-L020' :
+	F_data=[
+	'STe-H2_hyb100_gri30_F_L020-0.dat',
+	'STe-H2_hyb100_Laera-light_F_L020-0.dat']
+	F_prof=[
+	'F_phi050_Ti300_H2_hyb100_gri30_F_L020.dat',
+	'F_phi050_Ti300_H2_hyb100_Laera-light_F_L020.dat']
+else : sys.exit('=> Error: tag not recognized')
+
+# F_data=[
 #==> H2
 # 'STe-H2_hyb100_gri30_F_L020-0.dat',
-'STe-H2_hyb100_UCSD_SanDiego0_F_L020-0.dat',
-'STe-H2_hyb100_Boivin_F_L020-0.dat',
+# 'STe-H2_hyb100_UCSD_SanDiego0_F_L020-0.dat',
+# 'STe-H2_hyb100_Boivin_F_L020-0.dat',
 # 'STe-H2_hyb100_Laera-light_F_L020-0.dat',
 #==> 50p
 # 'STe-CH4_hyb50_gri30_F_L020-0.dat',
@@ -39,14 +62,13 @@ F_data=[
 #==> CH4
 # 'STe-CH4_hyb00_gri30_F_L020-0.dat',
 # 'STe-CH4_hyb00_Laera-light_F_L020-0.dat'
-# 'STe-CH4_hyb00_2S_CH4_BFER_F_L020-0.dat'
-]
+# 'STe-CH4_hyb00_2S_CH4_BFER_F_L020-0.dat']
 
-F_prof=[
+# F_prof=[
 #==> H2
 # 'F_phi050_Ti300_H2_hyb100_gri30_F_L020.dat',
-'F_phi050_Ti300_H2_hyb100_UCSD_SanDiego0_F_L020.dat',
-'F_phi050_Ti300_H2_hyb100_Boivin_F_L020.dat',
+# 'F_phi050_Ti300_H2_hyb100_UCSD_SanDiego0_F_L020.dat',
+# 'F_phi050_Ti300_H2_hyb100_Boivin_F_L020.dat',
 # 'F_phi050_Ti300_H2_hyb100_Laera-light_F_L020.dat',
 #==> 50p
 # 'F_phi050_Ti300_CH4_hyb50_gri30_F_L020.dat',
@@ -54,8 +76,7 @@ F_prof=[
 #==> CH4
 # 'F_phi100_Ti300_CH4_hyb00_gri30_F_L020.dat',
 # 'F_phi100_Ti300_CH4_hyb00_Laera-light_F_L020.dat'
-# 'F_phi100_Ti300_CH4_hyb00_2S_CH4_BFER_F_L020.dat',
-]
+# 'F_phi100_Ti300_CH4_hyb00_2S_CH4_BFER_F_L020.dat']
 
 DATA=[ np.loadtxt(dird+f,skiprows=1,delimiter=',') for f in F_data ]
 PROF=[ np.loadtxt(dirp+f,skiprows=1,delimiter=',') for f in F_prof ]
@@ -66,7 +87,7 @@ PROF=[ np.loadtxt(dirp+f,skiprows=1,delimiter=',') for f in F_prof ]
 (plt,mtp)=util.Plot0()
 
 #=====> Profiles
-figP,axP=plt.subplots(figsize=(10,8)) ; bxP=axP.twinx()
+figP,axP=plt.subplots(figsize=(10,6)) ; bxP=axP.twinx()
 Col=['g','r']
 for n,p in enumerate(PROF) :
 	axP.plot(p[:,0]*1e3,p[:,1],Col[n])
@@ -79,6 +100,8 @@ axC[0,0].set_ylabel('Tad [K]' ,fontsize=30)    ; axC[0,0].set_title('Adiabatique
 axC[0,1].set_ylabel('Sl [m/s]',fontsize=30)    ; axC[0,1].set_title('Flame velocity'         ,fontsize=20) ; VS=[]
 axC[1,0].set_ylabel('Dl [mm]' ,fontsize=30)    ; axC[1,0].set_title('Flame thickness'        ,fontsize=20) ; VD=[]
 axC[1,1].set_ylabel('PCI [MJ/kg]',fontsize=30) ; axC[1,1].set_title('Thermal power'          ,fontsize=20) ; VQ=[]
+bxC[0,1].set_ylabel('Relative error [%]' ,fontsize=30)
+bxC[1,1].set_ylabel('Relative error [%]' ,fontsize=30)
 Col=['g','r']
 for n,d in enumerate(DATA) :
 	VT.append(      d[:,3] )
@@ -102,10 +125,10 @@ bxC[0,1].plot( DATA[0][:Nt,1] , 100*abs(VS[1][:Nt]-VS[0][:Nt])/VS[0][:Nt],'k' )
 bxC[1,0].plot( DATA[0][:Nt,1] , 100*abs(VD[1][:Nt]-VD[0][:Nt])/VD[0][:Nt],'k' )
 bxC[1,1].plot( DATA[0][:Nt,1] , 100*abs(VQ[1][:Nt]-VQ[0][:Nt])/VQ[0][:Nt],'k' )
 
-util.NewPos(bxC[0,0],1,1,-0.03,0)
-util.NewPos(bxC[0,1],1,1, 0.03,0)
-util.NewPos(bxC[1,0],1,1,-0.03,0)
-util.NewPos(bxC[1,1],1,1, 0.03,0)
+util.NewPos(bxC[0,0],1,1,-0.04,0)
+util.NewPos(bxC[0,1],1,1, 0.01,0)
+util.NewPos(bxC[1,0],1,1,-0.04,0)
+util.NewPos(bxC[1,1],1,1, 0.01,0)
 
 if SAVE :
 	figP.savefig('Plot/Compare-{}-Profiles.pdf'.format(tag))
