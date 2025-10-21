@@ -172,7 +172,6 @@ if DATA :
 		erase=input(' Do you want to erase it ? (y/n) ')
 		if 'y' in erase : os.system('rm {0} '.format(STe_data))
 		else 	        : sys.exit('\n\n====> Stop to avoid overwriting data \n\n')
-	# tit='hyb,phi,Tu,Ta,Sl,Thick,rhou,IHrr,MHrr'
 	tit='hyb,phi,Tu,Ta,Sl,Thick,rhou,IHrr,MHrr,la,cp'
 	os.system('echo {0} >> {1}'.format(tit,STe_data))
 else   : print(5*'\n'+'\033[33m'+5*'='+'>'+'  Warning DATA :',DATA,'\033[0m'+7*'\n')
