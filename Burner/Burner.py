@@ -103,6 +103,10 @@ for hyb in Vhyb :
 		#=========================> Adiabatic Flame
 		(f_a,conv_a)=f1D.Adia1D_0(  Xu,Tu,Pu,grid0,N_In_a,N_Ou_a,Tol,Tstep,Rafcrit,gas,pm.Ray,pm.verb )
 		#==========> Properties
+		if not conv_a : 
+			print('=> no burner conv')
+			Clear(N_In_a)
+			break
 		Grid=f_a.grid*1e3               # [mm]
 		T   =f_a.T                      # [K]
 		Sl0 =f_a.velocity[0]            # [m/s]
@@ -120,11 +124,10 @@ for hyb in Vhyb :
 		for r_m0 in Vrm0 :
 			mdot=r_m0*md_a
 			carac='hyb%03.0f-phi%03.0f-rm%03.0f'%(hyb*1e2,phi*1e2,r_m0*1e2)
-			print( '=> r : %03.0f [p]   ,   mdot : %.0f [g/sm2]'%(r_m0*1e2,mdot*1e3) )
 			#=========================> Burner Flame
 			(f_b,conv_b)=f1D.Burner1D_0(Xu,mdot,Tu,Pu,grid0,N_In_b,N_Ou_b,Tol,Tstep,Rafcrit,gas,pm.Ray,pm.verb)
 			if not conv_a : 
-				print('=> no conv')
+				print('=> no burner conv')
 				Clear(N_In_b)
 				break
 			#==========> Properties
@@ -136,6 +139,7 @@ for hyb in Vhyb :
 			Qx=f_b.heat_release_rate  # [W/m3]
 			MQ=max(Qx)                # [W/m3]
 			IQ=sum( 0.5*(Qx[1:]+Qx[:-1])*(Grid[1:]-Grid[:-1]) ) # [W/m2]
+			print( '=> r : %03.0f [p]   ,   mdot : %.0f [g/s-m2]  =>  Tb : %.0f [K]  ,  IQ : %.0f [GW/m3]'%(r_m0*1e2,mdot*1e3,T[-1],IQ*1e-9) )
 			#=========================> Plotting
 			if PLOT :
 				f1D.PlotFlame(           Grid,Yf,T,Tad,Qx,MQ_a,5,     dp+'/BurnerFlame-%s.pdf'%(carac) , 'Burner Flame : phi=%.2f  ,  rm=%.2f '%(phi,r_m0) )
