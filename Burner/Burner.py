@@ -12,8 +12,9 @@
 #                     Modules
 #===================================================================================
 import Utilities as util
-(Sysa,NSysa,Arg)=util.Parseur(['Plot','Data','Clear'],1,'Arg : case ')
-(                               PLOT , DATA , CLEAR )=Arg
+(Sysa,NSysa,Arg)=util.Parseur(['Plot','Data','Clear','All'],1,'Arg : case ')
+(                               PLOT , DATA , CLEAR , ALL )=Arg
+if ALL : DATA=True ; PLOT=True ; CLEAR=True
 
 import Flamme1D    as f1D
 # import Manip       as man
@@ -59,7 +60,7 @@ Tstep=pm.Tstep
 Rafcrit=pm.Rafcrit
 
 #=========================> Options
-Ray=pm.Ray
+Ray =pm.Ray
 verb=pm.verb
 
 #=========================> Loops
@@ -68,11 +69,11 @@ Vphi=pm.Vphi
 Vrm0=pm.Vrm0
 
 #=========================> Names
-N_In_a=df+'FreeFlame.yaml'
-N_Ou_a=N_In_a
-N_In_b=df+'BurnerFlame.yaml'
-N_Ou_b=N_In_b
-STe_data=dd+'STe.csv'
+N_In_a  =df+pm.N_In_a
+N_Ou_a  =df+pm.N_Ou_a
+N_In_b  =df+pm.N_In_b
+N_Ou_b  =df+pm.N_Ou_b
+STe_data=dd+pm.STe_data
 
 #%%=================================================================================
 util.Entete1(104,[],'Burner')
@@ -90,7 +91,7 @@ if DATA :
 	tit='hyb,phi,rm,Tu,Ta,Sl,rhou,IQ,MQ'
 	for s in pm.SpeOu : tit+=',Y'+s+'_u'+',Y'+s+'_m'+',Y'+s+'_b'
 	os.system('echo {0} > {1}'.format(tit,STe_data))
-else   : util.Section('Warning : No Data',5,5,'y')
+else : util.Section('Warning : No Data',5,5,'y')
 #===================================================================================
 
 Spe_names=gas.species_names
@@ -99,7 +100,7 @@ Is_ou=[ Spe_names.index(s) for s in pm.SpeOu ]
 for hyb in Vhyb :
 	for phi in Vphi :
 		Xu= f1D.Xu(phi,hyb,f1D.r_N2(X0),f1D.r_O2(hyb)) # Unburnt mixture
-		Xu['CO2']=pm.r_CO2*Xu['O2']
+		if pm.r_CO2>0 : Xu['CO2']=pm.r_CO2*Xu['O2']
 		#=========================> Adiabatic Flame
 		(f_a,conv_a)=f1D.Adia1D_0(  Xu,Tu,Pu,grid0,N_In_a,N_Ou_a,Tol,Tstep,Rafcrit,gas,pm.Ray,pm.verb )
 		#==========> Properties
@@ -108,6 +109,7 @@ for hyb in Vhyb :
 			Clear(N_In_a)
 			break
 		Grid=f_a.grid*1e3               # [mm]
+		Yf  =f_a.Y[If,:]                # [-]
 		T   =f_a.T                      # [K]
 		Sl0 =f_a.velocity[0]            # [m/s]
 		rho0=f_a.density_mass[0]        # [kg/m3]
@@ -117,6 +119,10 @@ for hyb in Vhyb :
 		md_a=Sl0*rho0
 		Tad=T[-1]
 		util.Section('hyb : %.3f  ,  phi : %.3f  ,  Tad : %.0f [K]  ,  Sl0 : %.3f [m/s]'%(hyb,phi,Tad,Sl0),0,3,'b')
+		carac='hyb%03.0f-phi%03.0f'%(hyb*1e2,phi*1e2)
+		if PLOT :
+			f1D.PlotFlame(           Grid,Yf ,T,Tad,Qx,MQ_a,[5,10],    dp+'/AdiaFlame-%s.pdf'%(carac) , 'Free Flame : phi=%.2f'%(phi) )
+			f1D.PlotSpecies(pm.SpeOu,Grid,f_a,Spe_names,[5,10],pm.ColS,dp+'/AdiaSpecies-%s.pdf'%(carac))
 		if DATA :
 			STe='%.12f,%.12f,%.12f,%.12f,%.12f,%.12e,%.12e,%.12e,%.12e'%(hyb,phi,1,T[0],T[-1],Sl0,rho0,IQ_a,MQ_a)
 			for k in Is_ou : Yk=f_a.Y[k,:] ; STe+=',%.12e,%.12e,%.12e'%(Yk[0],max(Yk),Yk[-1])
@@ -140,10 +146,10 @@ for hyb in Vhyb :
 			MQ=max(Qx)                # [W/m3]
 			IQ=sum( 0.5*(Qx[1:]+Qx[:-1])*(Grid[1:]-Grid[:-1]) ) # [W/m2]
 			print( '=> r : %03.0f [p]   ,   mdot : %.0f [g/s-m2]  =>  Tb : %.0f [K]  ,  IQ : %.0f [GW/m3]'%(r_m0*1e2,mdot*1e3,T[-1],IQ*1e-9) )
-			#=========================> Plotting
+			#=========================> Output
 			if PLOT :
-				f1D.PlotFlame(           Grid,Yf,T,Tad,Qx,MQ_a,5,     dp+'/BurnerFlame-%s.pdf'%(carac) , 'Burner Flame : phi=%.2f  ,  rm=%.2f '%(phi,r_m0) )
-				f1D.PlotSpecies(pm.SpeOu,Grid,f_b,Spe_names,5,pm.ColS,dp+'/BurnerSpecies-%s.pdf'%(carac))
+				f1D.PlotFlame(           Grid,Yf,T,Tad,Qx,MQ_a,[0,5],     dp+'/BurnerFlame-%s.pdf'%(carac) , 'Burner Flame : phi=%.2f  ,  rm=%.2f '%(phi,r_m0) )
+				f1D.PlotSpecies(pm.SpeOu,Grid,f_b,Spe_names,[0,5],pm.ColS,dp+'/BurnerSpecies-%s.pdf'%(carac))
 			if DATA :
 				STe='%.12f,%.12f,%.12f,%.12f,%.12f,%.12e,%.12e,%.12e,%.12e'%(hyb,phi,r_m0,T[0],T[-1],Sl,rho0,IQ,MQ)
 				for k in Is_ou : Yk=f_b.Y[k,:] ; STe+=',%.12e,%.12e,%.12e'%(Yk[0],max(Yk),Yk[-1])

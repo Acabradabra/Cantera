@@ -20,9 +20,9 @@ t0=time.time()
 
 dird='Data-Adia/'
 dirp='Profile/'
-# tag='H2-UCSD-Boivin-F-L020'
+tag='H2-UCSD-Boivin-F-L020'
 # tag='H2-Gri30-Boivin-F-L020'
-tag='H2-Gri30-Laera-F-L020'
+# tag='H2-Gri30-Laera-F-L020'
 # tag='CH4-Gri30-Laera-F-L020'
 # tag='CH4-Gri30-BFER-F-L020'
 # tag='CH4-50p-Gri30-Laera-F-L020'
@@ -48,35 +48,14 @@ elif tag=='H2-Gri30-Laera-F-L020' :
 	F_prof=[
 	'F_phi050_Ti300_H2_hyb100_gri30_F_L020.dat',
 	'F_phi050_Ti300_H2_hyb100_Laera-light_F_L020.dat']
+elif tag=='H2-UCSD-Boivin-F-L020' :
+	F_data=[
+	'STe-H2_hyb100_UCSD_SanDiego0_F_L020-0.dat',
+	'STe-H2_hyb100_Boivin_F_L020-0.dat']
+	F_prof=[
+	'F_phi050_Ti300_H2_hyb100_UCSD_SanDiego0_F_L020.dat',
+	'F_phi050_Ti300_H2_hyb100_Boivin_F_L020.dat']
 else : sys.exit('=> Error: tag not recognized')
-
-# F_data=[
-#==> H2
-# 'STe-H2_hyb100_gri30_F_L020-0.dat',
-# 'STe-H2_hyb100_UCSD_SanDiego0_F_L020-0.dat',
-# 'STe-H2_hyb100_Boivin_F_L020-0.dat',
-# 'STe-H2_hyb100_Laera-light_F_L020-0.dat',
-#==> 50p
-# 'STe-CH4_hyb50_gri30_F_L020-0.dat',
-# 'STe-CH4_hyb50_Laera-light_F_L020-0.dat',
-#==> CH4
-# 'STe-CH4_hyb00_gri30_F_L020-0.dat',
-# 'STe-CH4_hyb00_Laera-light_F_L020-0.dat'
-# 'STe-CH4_hyb00_2S_CH4_BFER_F_L020-0.dat']
-
-# F_prof=[
-#==> H2
-# 'F_phi050_Ti300_H2_hyb100_gri30_F_L020.dat',
-# 'F_phi050_Ti300_H2_hyb100_UCSD_SanDiego0_F_L020.dat',
-# 'F_phi050_Ti300_H2_hyb100_Boivin_F_L020.dat',
-# 'F_phi050_Ti300_H2_hyb100_Laera-light_F_L020.dat',
-#==> 50p
-# 'F_phi050_Ti300_CH4_hyb50_gri30_F_L020.dat',
-# 'F_phi050_Ti300_CH4_hyb50_Laera-light_F_L020.dat',
-#==> CH4
-# 'F_phi100_Ti300_CH4_hyb00_gri30_F_L020.dat',
-# 'F_phi100_Ti300_CH4_hyb00_Laera-light_F_L020.dat'
-# 'F_phi100_Ti300_CH4_hyb00_2S_CH4_BFER_F_L020.dat']
 
 DATA=[ np.loadtxt(dird+f,skiprows=1,delimiter=',') for f in F_data ]
 PROF=[ np.loadtxt(dirp+f,skiprows=1,delimiter=',') for f in F_prof ]
@@ -85,6 +64,17 @@ PROF=[ np.loadtxt(dirp+f,skiprows=1,delimiter=',') for f in F_prof ]
 ######################################             Ploting           #
 #---------------------------------------------------------------------
 (plt,mtp)=util.Plot0()
+
+#=====> Mono
+prof=PROF[0]
+pos=prof[:,0]*1e3
+T=(prof[:,1]-prof[0,1])/(prof[-1,1]-prof[0,1])
+Y=prof[:,3]/prof[0,3]
+Q=prof[:,6]/max(prof[:,6])
+figM,axM=plt.subplots(figsize=(10,6))
+axM.plot( pos,Y , 'b' )
+axM.plot( pos,T , 'r' )
+axM.plot( pos,Q , 'k' )
 
 #=====> Profiles
 figP,axP=plt.subplots(figsize=(10,6)) ; bxP=axP.twinx()
@@ -118,8 +108,6 @@ axC[1,1].set_xlabel('$\phi$ [-]',fontsize=30)
 N0=len(VT[0])
 N1=len(VT[1])
 Nt=min(N0,N1)
-# print(DATA[0][:Nt,1])
-# print()
 bxC[0,0].plot( DATA[0][:Nt,1] , 100*abs(VT[1][:Nt]-VT[0][:Nt])/VT[0][:Nt],'k' )
 bxC[0,1].plot( DATA[0][:Nt,1] , 100*abs(VS[1][:Nt]-VS[0][:Nt])/VS[0][:Nt],'k' )
 bxC[1,0].plot( DATA[0][:Nt,1] , 100*abs(VD[1][:Nt]-VD[0][:Nt])/VD[0][:Nt],'k' )
@@ -131,8 +119,8 @@ util.NewPos(bxC[1,0],1,1,-0.04,0)
 util.NewPos(bxC[1,1],1,1, 0.01,0)
 
 if SAVE :
-	figP.savefig('Plot/Compare-{}-Profiles.pdf'.format(tag))
-	figC.savefig('Plot/Compare-{}-Carac.pdf'.format(tag))
-	figC.savefig('Plot/Compare-{}-Carac.png'.format(tag))
+	util.SaveFig(figP,'Plot/Compare-{}-Profiles.pdf'.format(tag))
+	util.SaveFig(figC,'Plot/Compare-{}-Carac.pdf'.format(tag))
+	util.SaveFig(figM,'Plot/Compare-{}-Mono.pdf'.format(tag))
 else :
 	plt.show()
