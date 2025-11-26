@@ -122,17 +122,17 @@ elif COMPA :
     for rm in Rm :
         fname_m='YCO-r%03.0f_m.pdf'%(rm*100)
         fname_b='YCO-r%03.0f_b.pdf'%(rm*100)
-        fig_m,ax_m=plt.subplots(ncols=nc,nrows=nr,figsize=(14,8*nr/nc))
-        fig_b,ax_b=plt.subplots(ncols=nc,nrows=nr,figsize=(14,8*nr/nc))
+        fig_m,ax_m=plt.subplots(ncols=nc,nrows=nr,figsize=(14,8*nr/nc)) ; bx_m=[ [a.twinx() for a in A] for A in ax_m]
+        fig_b,ax_b=plt.subplots(ncols=nc,nrows=nr,figsize=(14,8*nr/nc)) ; bx_b=[ [a.twinx() for a in A] for A in ax_b]
         if Nh%nc>0 : 
-            ax_m[-1,-1].axis('off')
-            ax_b[-1,-1].axis('off')
+            ax_m[-1,-1].axis('off') ; bx_m[-1][-1].axis('off')
+            ax_b[-1,-1].axis('off') ; bx_b[-1][-1].axis('off')
         fig_m.suptitle(titre_m,fontsize=30)
         fig_b.suptitle(titre_b,fontsize=30)
         for n,h in enumerate(Hyb) :
             i=n//nc ; j=n%nc
-            ax_m[i,j].set_title( r'Hybridation : %.2f'%h ,fontsize=20)
-            ax_b[i,j].set_title( r'Hybridation : %.2f'%h ,fontsize=20)
+            ax_m[i,j].set_title( r'Hybridation : %.0f'%(h*1e2)+'%' ,fontsize=20)
+            ax_b[i,j].set_title( r'Hybridation : %.0f'%(h*1e2)+'%' ,fontsize=20)
             for d,D in enumerate([Data1,Data2]) :
                 Sel_h=(D['hyb']==h)
                 Sel_r=(D['rm' ]==rm)
@@ -140,8 +140,19 @@ elif COMPA :
                 Phi  = D['phi'  ][Sel]
                 YCO_m= D['YCO_m'][Sel]
                 YCO_b= D['YCO_b'][Sel]
-                ax_m[i,j].plot(Phi,YCO_m,Col[d])
-                ax_b[i,j].plot(Phi,YCO_b,Col[d])
+                ax_m[i,j].plot(Phi,YCO_m*1e2,Col[d])
+                ax_b[i,j].plot(Phi,YCO_b*1e2,Col[d])
+            bx_m[i][j].plot(Data1['phi'][Sel],100*abs(Data1['YCO_m'][Sel]-Data2['YCO_m'][Sel])/Data1['YCO_m'][Sel],'k')
+            bx_b[i][j].plot(Data1['phi'][Sel],100*abs(Data1['YCO_b'][Sel]-Data2['YCO_b'][Sel])/Data1['YCO_b'][Sel],'k')
+            if j==0 :
+                ax_m[i,j].set_ylabel(r'$Y_{CO}^{m}$ [%]'   ,fontsize=25)
+                ax_b[i,j].set_ylabel(r'$Y_{CO}^{b}$ [%]'   ,fontsize=25)
+            if j==nc-1 :
+                bx_m[i][j].set_ylabel(r'Relative error [%]',fontsize=25)
+                bx_b[i][j].set_ylabel(r'Relative error [%]',fontsize=25)
+            if i==nr-1 :
+                ax_m[i,j].set_xlabel(r'$\phi$ [-]'         ,fontsize=25)
+                ax_b[i,j].set_xlabel(r'$\phi$ [-]'         ,fontsize=25)
         util.SaveFig(fig_m,dp+fname_m)
         util.SaveFig(fig_b,dp+fname_b)
 
