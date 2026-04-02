@@ -13,8 +13,8 @@
 #                     Modules
 #===================================================================================
 import Utilities as util
-(Sysa,NSysa,Arg)=util.Parseur(['Base','Nasa','Only','Save'],0,'Arg : ')
-(                             [ BASE , NASA , ONLY , SAVE ])=Arg
+(Sysa,NSysa,Arg)=util.Parseur(['Base','Nasa','Only','Mass','Save'],0,'Arg : ')
+(                             [ BASE , NASA , ONLY , MASS , SAVE ])=Arg
 
 import Flamme1D as f1D
 from numpy import *
@@ -32,6 +32,7 @@ t0=time.time()
 #===================================================================================
 dirp='/mnt/scratch/ZEUS/Cantera/Solid/PLOT/'
 
+Pow=8e5 # [W] Power of the process
 mdot=6 # [T/j] Production of klinker
 # mdot=5.6 # [T/j] Production of klinker
 
@@ -46,6 +47,40 @@ Tfus=1500+273.15 # [K] Fusion temperature of CAC
 
 
 #%%=================================================================================
+if MASS :
+    (mdot_h2o,mdot_co2,y_kk)=kk.Compo2( mdot,kk.Compo_feed,kk.Compo_AlOOH,kk.Compo_CACO3 )
+    print(f'=> Mass flow rate of water : {mdot_h2o*1e3:.0f} [g/s] , {mdot_h2o*3600:.0f} [kg/h]')
+    print(f'=> Mass flow rate of CO2   : {mdot_co2*1e3:.0f} [g/s] , {mdot_co2*3600:.0f} [kg/h]')
+    print(f'=> KK/RM : {100*y_kk:.2f} [%]')
+
+    d_schem='/mnt/d/Cantera/Scheme'
+    ct.add_directory(d_schem)
+    gas=ct.Solution( 'Laera.yaml' )
+    spe=gas.species()
+    Spe_co2=spe[ gas.species_index('CO2') ]
+    Spe_h2o=spe[ gas.species_index('H2O') ]
+    Tref=1400 # [K] Reference temperature for enthalpy calculation
+    # Tref=300 # [K] Reference temperature for enthalpy calculation
+    H_co2=Spe_co2.thermo.h(Tref)/Spe_co2.molecular_weight # [J/kg] Enthalpy of CO2 at Tref
+    H_h2o=Spe_h2o.thermo.h(Tref)/Spe_h2o.molecular_weight # [J/kg] Enthalpy of H2O at Tref
+    print(f'=> Enthalpy of CO2 at {Tref:.0f} [K] : {H_co2/1e3:.0f} [kJ/kg] , {H_co2/4.184e3:.0f} [kcal/kg]')
+    print(f'=> Enthalpy of H2O at {Tref:.0f} [K] : {H_h2o/1e3:.0f} [kJ/kg] , {H_h2o/4.184e3:.0f} [kcal/kg]')
+    C_co2=Spe_co2.thermo.cp(Tref)/Spe_co2.molecular_weight # [J/kg] Heat capacity of CO2 at Tref
+    C_h2o=Spe_h2o.thermo.cp(Tref)/Spe_h2o.molecular_weight # [J/kg] Heat capacity of H2O at Tref
+    print(f'=> Heat capacity of CO2 at {Tref:.0f} [K] : {C_co2/1e3:.3f} [kJ/kg/K] , {C_co2/4.184e3:.3f} [kcal/kg/K]')
+    print(f'=> Heat capacity of H2O at {Tref:.0f} [K] : {C_h2o/1e3:.3f} [kJ/kg/K] , {C_h2o/4.184e3:.3f} [kcal/kg/K]')
+
+    PH_co2=mdot_co2*H_co2 # [W] Power of CO2
+    PH_h2o=mdot_h2o*H_h2o # [W] Power of H2O
+    print(f'=> Power(H) of CO2 : {PH_co2/1e3:.0f} [kW] , {100*PH_co2/Pow:.0f} % Pow')
+    print(f'=> Power(H) of H2O : {PH_h2o/1e3:.0f} [kW] , {100*PH_h2o/Pow:.0f} % Pow')
+    DT=Tref # [K] Temperature difference for sensible heat calculation
+    PT_co2=mdot_co2*DT*C_co2 # [W] Power of CO2
+    PT_h2o=mdot_h2o*DT*C_h2o # [W] Power of H2O
+    print(f'=> Power(T) of CO2 : {PT_co2/1e3:.0f} [kW] , {100*PT_co2/Pow:.0f} % Pow')
+    print(f'=> Power(T) of H2O : {PT_h2o/1e3:.0f} [kW] , {100*PT_h2o/Pow:.0f} % Pow')
+
+#===================================================================================
 if BASE :
     fp1=-145.547400
     fp2=-73.607790 
@@ -64,7 +99,6 @@ if NASA :
     Species=list(kk.Compo_feed)+list(kk.Compo_AlOOH)+list(kk.Compo_CACO3)
     # print(Species)
     Tref=1e3
-
     print(util.Col('b','=> Gas :'))
     for s in gas :
         if any([sp in s.name for sp in Species]) :
@@ -237,7 +271,9 @@ Eff_th=DH_tot/(4.184e3*y_kk)       # Efficiency of the process in thermie
 print(util.Col('g',f'=> DH_tot : {DH_tot/1e3:.2f} [kJ/kg(rm)]  ,  Eff : {Eff_j:.2f} [GJ/t KK] , {Eff_th:.2f} [th/t KK] '))
 print(util.Col('g',f'=> m : {mdot:.2f} [T/j]  ==>  Power : {Pow/1e3:.2f} [kW] \n'))
 
-#====================> Figure
+#%%=================================================================================
+#                     Plot
+#===================================================================================
 fig,ax=plt.subplots(figsize=(10,15),nrows=3)
 Ybd=[ [0.7,1.05] , [0.2,0.32] , [0,3.5] ]
 for i in range(3) :
@@ -278,6 +314,7 @@ ax[2].plot(  [Temp7[0],Temp7[-1]],  [     H*1e-6,(H+DH7    )*1e-6],'k') ; H+=DH7
 ax[2].plot(2*[Tfus              ],  [     H*1e-6,(H+DH8    )*1e-6],'k') ; H+=DH8
 ax[2].plot(  [Temp9[0],Temp9[-1]],  [     H*1e-6,(H+DH9    )*1e-6],'k')
 ax[2].plot(  [ Temp[0], Temp[-1]],2*[DH_tot*1e-6],'--k')
+ax[2].plot(  [ Temp[0], Temp[-1]],[0,DH_tot*1e-6],':k'  )
 ax[2].text(Tvap-10,DH_tot*1e-6+0.1,'Drying'       ,fontsize=16)
 ax[2].text(Tdc1-10,DH_tot*1e-6+0.1,'Dehydration'  ,fontsize=16)
 ax[2].text(Tdc1+10,DH_tot*1e-6-0.2,'Decarbonation',fontsize=16)
