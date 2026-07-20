@@ -14,7 +14,7 @@
 import Utilities as util
 (Sysa,NSysa,Arg)=util.Parseur(['Plot','Data','Clear','All'],1,'Arg : case ')
 (                               PLOT , DATA , CLEAR , ALL )=Arg
-if ALL : DATA=True ; PLOT=True ; CLEAR=True
+if ALL : DATA=True ; PLOT=True #; CLEAR=True
 
 import Flamme1D    as f1D
 # import Manip       as man
@@ -25,7 +25,9 @@ import sys
 import time
 
 import cantera as ct
-ct.add_directory('/mnt/d/Cantera/Scheme')
+d0='/mnt/beegfs/ZEUS/'
+# d0='/mnt/d/'
+ct.add_directory(d0+'Cantera/Scheme')
 
 #os.system('clear')
 t0=time.time()
@@ -35,16 +37,16 @@ t0=time.time()
 #                     Inputs
 #===================================================================================
 dir=os.getcwd()+'/'+Sysa[0]+'/'
-df=dir+'Flammes/'
-dp=dir+'Plots/'
-dd=dir+'Data/'
-util.MKDIR(df)
-util.MKDIR(dp)
-util.MKDIR(dd)
 
 #=========================> Parameters import
 sys.path.append(dir)
 import Params as pm
+df=dir+'Flammes/'
+dp=dir+f'Plots-{pm.schem}/'
+dd=dir+'Data/'
+util.MKDIR(df)
+util.MKDIR(dp)
+util.MKDIR(dd)
 
 #=========================> Flow parameters
 Tu=pm.Tu
@@ -78,17 +80,17 @@ STe_data=dd+pm.STe_data
 #%%=================================================================================
 util.Entete1(104,[],'Burner')
 #===================================================================================
-def Clear(name) : print('\n===> Clearing') ; os.system('rm '+name)
+def Clear(name) : print('\n===> Clearing : '+name) ; os.system('rm '+name)
 #===================================================================================
 if CLEAR : Clear(df+'*')
 #===================================================================================
 if DATA : 
 	if os.path.exists(STe_data) : 
-		util.Section('Warning : Data file already exists',1,5,'y')
+		util.Section('Warning : Data file already exists : '+STe_data,1,5,'y')
 		erase=input(' Do you want to erase it ? (y/n) ')
 		if 'y' in erase : os.system('rm {0} '.format(STe_data))
 		else 	        : sys.exit('\n\n====> Stop to avoid overwriting data \n\n')
-	tit='hyb,phi,rm,Tu,Ta,Sl,rhou,IQ,MQ'
+	tit='hyb,phi,rm,Tu,Ta,Sl,Dl,rhou,IQ,MQ'
 	for s in pm.SpeOu : tit+=',Y'+s+'_u'+',Y'+s+'_m'+',Y'+s+'_b'
 	os.system('echo {0} > {1}'.format(tit,STe_data))
 else : util.Section('Warning : No Data',5,5,'y')
@@ -112,6 +114,7 @@ for hyb in Vhyb :
 		Yf  =f_a.Y[If,:]                # [-]
 		T   =f_a.T                      # [K]
 		Sl0 =f_a.velocity[0]            # [m/s]
+		Dl0 =f1D.Thick2(Grid,T,len(Grid))[0] # [mm]
 		rho0=f_a.density_mass[0]        # [kg/m3]
 		Qx  =f_a.heat_release_rate      # [W/m3]
 		MQ_a=max(Qx)                    # [W/m3]
@@ -121,10 +124,10 @@ for hyb in Vhyb :
 		util.Section('hyb : %.3f  ,  phi : %.3f  ,  Tad : %.0f [K]  ,  Sl0 : %.3f [m/s]'%(hyb,phi,Tad,Sl0),0,3,'b')
 		carac='hyb%03.0f-phi%03.0f'%(hyb*1e2,phi*1e2)
 		if PLOT :
-			f1D.PlotFlame(           Grid,Yf ,T,Tad,Qx,MQ_a,[5,10],    dp+'/AdiaFlame-%s.pdf'%(carac) , 'Free Flame : phi=%.2f'%(phi) )
-			f1D.PlotSpecies(pm.SpeOu,Grid,f_a,Spe_names,[5,10],pm.ColS,dp+'/AdiaSpecies-%s.pdf'%(carac))
+			f1D.PlotFlame(           Grid,Yf ,T,Tad,Qx,MQ_a,pm.xlims,    dp+'/AdiaFlame-%s.pdf'%(carac) , 'Free Flame : phi=%.2f'%(phi) )
+			f1D.PlotSpecies(pm.SpeOu,Grid,f_a,Spe_names,pm.xlims,pm.ColS,dp+'/AdiaSpecies-%s.pdf'%(carac))
 		if DATA :
-			STe='%.12f,%.12f,%.12f,%.12f,%.12f,%.12e,%.12e,%.12e,%.12e'%(hyb,phi,1,T[0],T[-1],Sl0,rho0,IQ_a,MQ_a)
+			STe=f'{hyb:.12f},{phi:.12f},{1:.12f},{T[0]:.12f},{T[-1]:.12f},{Sl0:.12f},{Dl0:.12f},{rho0:.12f},{IQ_a:.12f},{MQ_a:.12f}'
 			for k in Is_ou : Yk=f_a.Y[k,:] ; STe+=',%.12e,%.12e,%.12e'%(Yk[0],max(Yk),Yk[-1])
 			os.system('echo {0} >> {1}'.format(STe,STe_data))
 		for r_m0 in Vrm0 :
@@ -141,16 +144,19 @@ for hyb in Vhyb :
 			Yf=f_b.Y[If,:]            # [-]
 			T =f_b.T                  # [K]
 			Sl=f_b.velocity[0]        # [m/s]
+			Dl=f1D.Thick2(Grid,T,len(Grid))[0] # [mm]
 			rho0=f_b.density_mass[0]  # [kg/m3]
 			Qx=f_b.heat_release_rate  # [W/m3]
 			MQ=max(Qx)                # [W/m3]
 			IQ=sum( 0.5*(Qx[1:]+Qx[:-1])*(Grid[1:]-Grid[:-1]) ) # [W/m2]
-			print( '=> r : %03.0f [p]   ,   mdot : %.0f [g/s-m2]  =>  Tb : %.0f [K]  ,  IQ : %.0f [GW/m3]'%(r_m0*1e2,mdot*1e3,T[-1],IQ*1e-9) )
+			print( '=> r : %03.0f [p]   ,   mdot : %.0f [g/s-m2]  =>  Tb : %.0f [K]  ,  IQ : %.0f [MW/m2]'%(r_m0*1e2,mdot*1e3,T[-1],IQ*1e-6) )
 			#=========================> Output
 			if PLOT :
 				f1D.PlotFlame(           Grid,Yf,T,Tad,Qx,MQ_a,[0,5],     dp+'/BurnerFlame-%s.pdf'%(carac) , 'Burner Flame : phi=%.2f  ,  rm=%.2f '%(phi,r_m0) )
 				f1D.PlotSpecies(pm.SpeOu,Grid,f_b,Spe_names,[0,5],pm.ColS,dp+'/BurnerSpecies-%s.pdf'%(carac))
 			if DATA :
-				STe='%.12f,%.12f,%.12f,%.12f,%.12f,%.12e,%.12e,%.12e,%.12e'%(hyb,phi,r_m0,T[0],T[-1],Sl,rho0,IQ,MQ)
+				STe=f'{hyb:.12f},{phi:.12f},{r_m0:.12f},{T[0]:.12f},{T[-1]:.12f},{Sl:.12f},{Dl:.12f},{rho0:.12f},{IQ:.12f},{MQ:.12f}'
 				for k in Is_ou : Yk=f_b.Y[k,:] ; STe+=',%.12e,%.12e,%.12e'%(Yk[0],max(Yk),Yk[-1])
 				os.system('echo {0} >> {1}'.format(STe,STe_data))
+		# Clear(N_In_b)
+		

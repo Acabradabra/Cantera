@@ -13,8 +13,8 @@
 #                     Modules
 #===================================================================================
 import Utilities as util
-(Sysa,NSysa,Arg)=util.Parseur(['Base','Nasa','Only','Mass','Save'],0,'Arg : ')
-(                             [ BASE , NASA , ONLY , MASS , SAVE ])=Arg
+(Sysa,NSysa,Arg)=util.Parseur(['Base','Nasa','Only','Mass','Make','Save'],0,'Arg : ')
+(                             [ BASE , NASA , ONLY , MASS , MAKE , SAVE ])=Arg
 
 import Flamme1D as f1D
 from numpy import *
@@ -27,14 +27,23 @@ import time
 
 t0=time.time()
 (plt,mtp)=util.Plot0()
+d0='/mnt/beegfs/ZEUS/'
+dirp='PLOT/'
+dirc=d0+'Cantera/Scheme/'
+ct.add_directory(dirc)
 #%%=================================================================================
 #                     Parameters
 #===================================================================================
-dirp='/mnt/scratch/ZEUS/Cantera/Solid/PLOT/'
-
 Pow=8e5 # [W] Power of the process
 mdot=6 # [T/j] Production of klinker
 # mdot=5.6 # [T/j] Production of klinker
+
+#====================> Raw materials schem
+schem_gas='Laera'
+reduce=True
+# Raw_species=['H2O','H2O(s)','H2O(L)','CO2','CaO(s)','CaO(L)','AL2O3(a)','AL2O3(L)','Fe2O3(s)','SiO2(Lqz)','SiO2(L)','TiO2(ru)','TiO2(L)','CaCO3(caL)']
+# Raw_species=['H2O','H2O(s)','H2O(L)','CO2','CaO(s)','CaO(L)','AL2O3(a)','AL2O3(L)','Fe2O3(s)','CaCO3(caL)']
+Raw_species=['H2O(s)','CaO(s)','AL2O3(a)','Fe2O3(s)','CaCO3(caL)']
 
 #====================> Temperature discretisation
 dT=10                           # [K] Temperature step for enthalpy calculation
@@ -44,7 +53,6 @@ Tdhy=500 +273.15 # [K] Dehydration temperature of aluminum hydroxide
 Tdc1=500 +273.15 # [K] First decarbonization temperature of calcium carbonate
 Tdc2=900 +273.15 # [K] Second decarbonization temperature of calcium carbonate
 Tfus=1500+273.15 # [K] Fusion temperature of CAC
-
 
 #%%=================================================================================
 if MASS :
@@ -79,7 +87,6 @@ if MASS :
     PT_h2o=mdot_h2o*DT*C_h2o # [W] Power of H2O
     print(f'=> Power(T) of CO2 : {PT_co2/1e3:.0f} [kW] , {100*PT_co2/Pow:.0f} % Pow')
     print(f'=> Power(T) of H2O : {PT_h2o/1e3:.0f} [kW] , {100*PT_h2o/Pow:.0f} % Pow')
-
 #===================================================================================
 if BASE :
     fp1=-145.547400
@@ -107,6 +114,40 @@ if NASA :
     for s in sol :
         if any([sp in s.name for sp in Species]) :
             print(f' {s.name:<10} => cp : {s.thermo.cp(Tref):.5e} [J/K-kmol]   ,   h : {s.thermo.h(Tref):.5e} [J/kmol]')
+#===================================================================================
+if MAKE :
+    #====================> Flame kinetics
+    schem0=ct.Solution( schem_gas + '.yaml' )
+    Spec0=schem0.species()
+    Reac0=schem0.reactions()
+    if reduce :
+        Spen0=['O2','CH4','C2H6','H2','CO2','H2O','N2']
+        Eq0=[
+            'CH4 + 2 O2 <=> CO2 + 2 H2O',
+            'C2H6 + 3.5 O2 <=> 2 CO2 + 3 H2O',
+            'H2 + 0.5 O2 <=> H2O'
+        ]
+        Spec1,Reac1=[ s for s in Spec0 if s.name in Spen0 ],[]
+        for eq in Eq0 : Reac1.append( ct.Reaction.from_dict({'equation':eq,'rate-constant':{'A':1,'b':0,'Ea':0}},kinetics=schem0) )
+    else : Spec1,Reac1=Spec0[:],Reac0[:]
+    Spen1=[ s.name for s in Spec1 ] ; IN2=Spen1.index('N2')
+    S_N2=Spec1.pop(IN2)
+    Spen1.pop(IN2)
+    #====================> Raw materials kinetics
+    sol=ct.Species.list_from_file('nasa_condensed.yaml') ; Snames=[s.name for s in sol]
+    gas=ct.Species.list_from_file('nasa_gas.yaml')       ; Gnames=[s.name for s in gas]
+    for s in [ s for s in Raw_species if s not in Spen1 ] :
+        if s in Snames : Ds=sol[Snames.index(s)].input_data
+        if s in Gnames : Ds=gas[Gnames.index(s)].input_data
+        Ds['transport']=S_N2.input_data['transport']
+        Spec1.append( ct.Species.from_dict(Ds) )
+    #====================> Output
+    Spec1.append( S_N2 )
+    Spen1.append( 'N2' )
+    schem=ct.Solution(thermo='ideal-gas',kinetics='gas',transport_model='mixture-averaged',species=Spec1)
+    for r in Reac1 : schem.add_reaction(r)
+    schem.write_yaml(filename=dirc+'/Precize.yaml',units={'length':'m', 'quantity': 'kmol', 'activation-energy': 'J/kmol'},precision=12)
+    schem.write_chemkin(mechanism_path=dirc+'/Precize.ck',overwrite=True)
 #===================================================================================
 if ONLY : sys.exit('=> Output !')
 #===================================================================================
@@ -286,7 +327,7 @@ for i in range(3) :
 ax[0].set_ylabel( 'Mass fraction [-]'         , fontsize=25 )
 ax[1].set_ylabel( 'Heat capacity [kcal/K-kg]' , fontsize=25 )
 ax[2].set_ylabel( 'Enthalpy [MJ/kg]'          , fontsize=25 )
-ax[2].set_xlabel( 'Temperature [°C]'          , fontsize=25 )
+ax[2].set_xlabel( 'Temperature [K]'          , fontsize=25 )
 ax[0].set_xticklabels([])
 ax[1].set_xticklabels([])
 #=====> Mass fraction

@@ -12,10 +12,11 @@
 #                     Modules
 #===================================================================================
 import Utilities as util
-(Sysa,NSysa,Arg)=util.Parseur(['CO','NOx','Compa'],0,'Arg : ')
-(                               CO , NOX , COMPA )=Arg
+(Sysa,NSysa,Arg)=util.Parseur(['CO','NOx','Compa','Carac'],0,'Arg : ')
+(                               CO , NOX , COMPA , CARAC )=Arg
 
-import sys
+import os
+import Flamme1D   as f1D
 from numpy import *
 
 # t0=time.time()
@@ -57,11 +58,28 @@ elif COMPA :
     data1=d0+'Data/STe-gri30.csv'
     data2=d0+'Data/STe-Laera-light.csv'
     Col=['g','r']
+elif CARAC :
+    d0='Carac-O2-CO2_20p/'
+    # d0='Carac-Air-CO2_10p/'
+    rm=1
+    hyb=0
+    Schems=[
+        'gri30',
+        'Laera-light',
+        '2S_CH4_BFER']
+    Labels=[
+        'grimech',
+        'Laera' ,
+        'BFER']
+    if hyb==1 or 'Carac-O2' in d0 : Schems=Schems[:-1]
+    Col=['.k','-g','-r']
+    ERR=False
 
 #%%=================================================================================
 #                     Process
 #===================================================================================
 dp=d0+'Post/'
+if CARAC and ERR : dp=dp[:-1]+'-Err/'
 util.MKDIR(dp)
 #===================================================================================
 
@@ -155,5 +173,53 @@ elif COMPA :
                 ax_b[i,j].set_xlabel(r'$\phi$ [-]'         ,fontsize=25)
         util.SaveFig(fig_m,dp+fname_m)
         util.SaveFig(fig_b,dp+fname_b)
-
-# %%
+elif CARAC :
+    fig,ax=plt.subplots(ncols=2,nrows=2,figsize=(14,10))
+    if ERR : bx=array([ [ a.twinx() for a in al ] for al in ax ])
+    fig.suptitle('Flame characteristics',fontsize=30)
+    ax[0,0].set_ylabel(r'$T_{ad}$ [K]'      ,fontsize=30) ; ax[0,0].set_title('Adiabatique temperature',fontsize=30)
+    ax[0,1].set_ylabel(r'$S_l^0$ [cm/s]'    ,fontsize=30) ; ax[0,1].set_title('Flame velocity'         ,fontsize=30)
+    ax[1,0].set_ylabel(r'$\delta_l^0$ [mm]' ,fontsize=30) ; ax[1,0].set_title('Flame thickness'        ,fontsize=30)
+    ax[1,1].set_ylabel(r'$Y_{CO}^{b}$ [ppm]',fontsize=30) ; ax[1,1].set_title('Carbon monoxide'        ,fontsize=30)
+    ax[1,0].set_xlabel(r'$\phi$ [-]',fontsize=30)
+    ax[1,1].set_xlabel(r'$\phi$ [-]',fontsize=30)
+    #; ax[0,0].set_ylim(Tlim)
+    #; ax[0,1].set_ylim(Slim)
+    #; ax[1,0].set_ylim(Dlim)
+    #; ax[1,1].set_ylim(Ylim)
+    for n,s in enumerate(Schems) :
+        for mix in ['lean','rich'] :
+            data=d0+'Data/STe-{}-{}.csv'.format(s,mix) ; print('=> Reading : '+data)
+            if os.path.exists(data) :
+                D=util.ReadCSV(data)
+                Sel=f1D.SelHybRm(D,hyb,rm)
+                if   n==0 and mix=='lean' : D0_l=D ; N0_l=len(D0_l['phi'][Sel]) ; Sel0_l=Sel
+                elif n==0 and mix=='rich' : D0_r=D ; N0_r=len(D0_r['phi'][Sel]) ; Sel0_r=Sel
+                elif True : # mix=='lean' : 
+                    if   mix=='lean' : D0=D0_l ; N0=N0_l ; Sel0=Sel0_l
+                    elif mix=='rich' : D0=D0_r ; N0=N0_r ; Sel0=Sel0_r
+                    N1=len(D['phi']) ; Nt=min([N0,N1])-1
+                    ET=abs(D['Ta'   ][Sel][:Nt]-D0['Ta'   ][Sel0][:Nt])/D0['Ta'   ][Sel0][:Nt] ; print(f'=> ET : {100*max(ET):.2f} [%]')
+                    ES=abs(D['Sl'   ][Sel][:Nt]-D0['Sl'   ][Sel0][:Nt])/D0['Sl'   ][Sel0][:Nt] ; print(f'=> ES : {100*max(ES):.2f} [%]')
+                    ED=abs(D['Dl'   ][Sel][:Nt]-D0['Dl'   ][Sel0][:Nt])/D0['Dl'   ][Sel0][:Nt] ; print(f'=> ED : {100*max(ED):.2f} [%]')
+                    EY=abs(D['YCO_b'][Sel][:Nt]-D0['YCO_b'][Sel0][:Nt])/D0['YCO_b'][Sel0][:Nt] ; print(f'=> EY : {100*max(EY):.2f} [%]')
+                if n==1 and ERR : 
+                    bx[0,0].plot(D['phi'][Sel][:Nt],100*ET,'k')
+                    bx[0,1].plot(D['phi'][Sel][:Nt],100*ES,'k')
+                    bx[1,0].plot(D['phi'][Sel][:Nt],100*ED,'k')
+                    bx[1,1].plot(D['phi'][Sel][:Nt],100*EY,'k')
+                Phi=D['phi'  ][Sel]
+                Tad=D['Ta'   ][Sel]
+                Sl =D['Sl'   ][Sel]*1e2
+                Dl =D['Dl'   ][Sel]
+                YCO=D['YCO_b'][Sel]*1e6
+                ax[0,0].plot(    Phi,Tad,Col[n],label=Labels[n]+'-')
+                ax[0,1].plot(    Phi,Sl ,Col[n],label=Labels[n]+'-')
+                ax[1,0].plot(    Phi,Dl ,Col[n],label=Labels[n]+'-')
+                ax[1,1].semilogy(Phi,YCO,Col[n],label=Labels[n]+'-')
+            else : print('=> No file ')
+    ax[0,0].plot(2*[1],ax[0,0].get_ylim(),':k')
+    ax[0,1].plot(2*[1],ax[0,1].get_ylim(),':k')
+    ax[1,0].plot(2*[1],ax[1,0].get_ylim(),':k')
+    ax[1,1].plot(2*[1],ax[1,1].get_ylim(),':k')
+    util.SaveFig(fig,dp+f'Carac-hyb{hyb*100:03.0f}.svg')
