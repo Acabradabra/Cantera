@@ -127,16 +127,16 @@ if MAKE :
             'C2H6 + 3.5 O2 <=> 2 CO2 + 3 H2O',
             'H2 + 0.5 O2 <=> H2O'
         ]
-        Spec1,Reac1=[ s for s in Spec0 if s.name in Spen0 ],[]
-        for eq in Eq0 : Reac1.append( ct.Reaction.from_dict({'equation':eq,'rate-constant':{'A':1,'b':0,'Ea':0}},kinetics=schem0) )
-    else : Spec1,Reac1=Spec0[:],Reac0[:]
-    Spen1=[ s.name for s in Spec1 ] ; IN2=Spen1.index('N2')
-    S_N2=Spec1.pop(IN2)
-    Spen1.pop(IN2)
+        Spec_g,Reac_g=[ s for s in Spec0 if s.name in Spen0 ],[]
+        for eq in Eq0 : Reac_g.append( ct.Reaction.from_dict({'equation':eq,'rate-constant':{'A':1,'b':0,'Ea':0}},kinetics=schem0) )
+    else : Spec_g,Reac_g=Spec0[:],Reac0[:]
+    Spen_g=[ s.name for s in Spec_g ]
+    IN2 =Spen_g.index('N2' ) ; S_N2 =Spec_g.pop(IN2 ) #; N_N2 =Spen_g.pop(IN2)
+    ICO2=Spen_g.index('CO2') ; S_CO2=Spec_g.pop(ICO2) #; N_CO2=Spen_g.pop(ICO2)
     #====================> Raw materials kinetics
     sol=ct.Species.list_from_file('nasa_condensed.yaml') ; Snames=[s.name for s in sol]
     gas=ct.Species.list_from_file('nasa_gas.yaml')       ; Gnames=[s.name for s in gas]
-    for s in [ s for s in Raw_species if s not in Spen1 ] :
+    for s in Raw_species :
         if s in Snames : Ds=sol[Snames.index(s)].input_data
         if s in Gnames : Ds=gas[Gnames.index(s)].input_data
         Ds['transport']=S_N2.input_data['transport']
